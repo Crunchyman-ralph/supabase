@@ -265,7 +265,10 @@ services:
       PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
       PGRST_DB_ANON_ROLE: anon
       # PostgREST accepts a plain-text symmetric secret, a single JWK, or a JWKS
-      PGRST_JWT_SECRET: ${JWT_JWKS:-${JWT_SECRET}}
+      # NOTE: Nested variable substitution ${JWT_JWKS:-${JWT_SECRET}} breaks Docker Compose
+      # in some environments (e.g. Coolify). Using JWT_SECRET directly instead.
+      # If using JWKS, set PGRST_JWT_SECRET via the JWT_SECRET env var.
+      PGRST_JWT_SECRET: ${JWT_SECRET}
       PGRST_DB_USE_LEGACY_GUCS: "false"
       PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
@@ -473,8 +476,9 @@ services:
           "http://localhost:4000/health"
         ]
       timeout: 5s
-      interval: 5s
-      retries: 10
+      interval: 10s
+      retries: 15
+      start_period: 30s
     depends_on:
       db:
         # Disable this if you are using an external Postgres database
@@ -535,7 +539,8 @@ services:
         ]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 30s
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}
